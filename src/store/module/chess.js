@@ -105,7 +105,11 @@ const state = {
   turn: 'white',
   gameover: 'x',
   check: false,
-  score: { black: 0, white: 0 }
+  score: { black: 0, white: 0 },
+  blackposition: {},
+  whiteposition: {},
+  choosepiece: '',
+  ischecked: false
 }
 
 const mutations = {
@@ -115,6 +119,82 @@ const mutations = {
 
     const color = payload == 'white' ? 'black' : 'white'
     state.side = payload == 'white' ? 'black' : 'white'
+
+    if (color == 'black') {
+      state.whiteposition = {
+        R1: { row: 0, col: 0 },
+        R2: { row: 0, col: 7 },
+        N1: { row: 0, col: 1 },
+        N2: { row: 0, col: 6 },
+        B1: { row: 0, col: 2 },
+        B2: { row: 0, col: 5 },
+        Q: { row: 0, col: 3 },
+        K: { row: 0, col: 4 },
+        P1: { row: 1, col: 0 },
+        P2: { row: 1, col: 1 },
+        P3: { row: 1, col: 2 },
+        P4: { row: 1, col: 3 },
+        P5: { row: 1, col: 4 },
+        P6: { row: 1, col: 5 },
+        P7: { row: 1, col: 6 },
+        P8: { row: 1, col: 7 }
+      }
+      state.blackposition = {
+        R1: { row: 7, col: 0 },
+        R2: { row: 7, col: 7 },
+        N1: { row: 7, col: 1 },
+        N2: { row: 7, col: 6 },
+        B1: { row: 7, col: 2 },
+        B2: { row: 7, col: 5 },
+        Q: { row: 7, col: 3 },
+        K: { row: 7, col: 4 },
+        P1: { row: 6, col: 0 },
+        P2: { row: 6, col: 1 },
+        P3: { row: 6, col: 2 },
+        P4: { row: 6, col: 3 },
+        P5: { row: 6, col: 4 },
+        P6: { row: 6, col: 5 },
+        P7: { row: 6, col: 6 },
+        P8: { row: 6, col: 7 }
+      }
+    } else {
+      state.blackposition = {
+        R1: { row: 0, col: 0 },
+        R2: { row: 0, col: 7 },
+        N1: { row: 0, col: 1 },
+        N2: { row: 0, col: 6 },
+        B1: { row: 0, col: 2 },
+        B2: { row: 0, col: 5 },
+        Q: { row: 0, col: 3 },
+        K: { row: 0, col: 4 },
+        P1: { row: 1, col: 0 },
+        P2: { row: 1, col: 1 },
+        P3: { row: 1, col: 2 },
+        P4: { row: 1, col: 3 },
+        P5: { row: 1, col: 4 },
+        P6: { row: 1, col: 5 },
+        P7: { row: 1, col: 6 },
+        P8: { row: 1, col: 7 }
+      }
+      state.whiteposition = {
+        R1: { row: 7, col: 0 },
+        R2: { row: 7, col: 7 },
+        N1: { row: 7, col: 1 },
+        N2: { row: 7, col: 6 },
+        B1: { row: 7, col: 2 },
+        B2: { row: 7, col: 5 },
+        Q: { row: 7, col: 3 },
+        K: { row: 7, col: 4 },
+        P1: { row: 6, col: 0 },
+        P2: { row: 6, col: 1 },
+        P3: { row: 6, col: 2 },
+        P4: { row: 6, col: 3 },
+        P5: { row: 6, col: 4 },
+        P6: { row: 6, col: 5 },
+        P7: { row: 6, col: 6 },
+        P8: { row: 6, col: 7 }
+      }
+    }
     state.table[0] = [
       { piece: 'R', color: payload, abletomove: false, abletocapture: false },
       { piece: 'N', color: payload, abletomove: false, abletocapture: false },
@@ -159,6 +239,7 @@ const mutations = {
     ]
     this.commit('chess/countscore', 'black')
     this.commit('chess/countscore', 'white')
+    // console.log(state.whiteposition, state.blackposition)
   },
   countscore(state, payload) {
     if (payload == 'black') {
@@ -258,6 +339,29 @@ const mutations = {
       }
     }
   },
+  getPieceAtPosition(state, payload) {
+    if (payload.color == 'white') {
+      // Check if the position matches any of the white pieces
+      for (const key in state.whiteposition) {
+        const piecePosition = state.whiteposition[key]
+        if (piecePosition.row === payload.row && piecePosition.col === payload.col) {
+          state.choosepiece = key
+        }
+      }
+    } else {
+      // Check if the position matches any of the black pieces
+      for (const key in state.blackposition) {
+        const piecePosition = state.blackposition[key]
+        if (piecePosition.row === payload.row && piecePosition.col === payload.col) {
+          state.choosepiece = key
+        }
+      }
+    }
+
+    // No piece found at the given position
+    return null
+  },
+
   moveabletileking(state, payload) {
     const directions = [
       { row: -1, col: -1 },
@@ -482,9 +586,19 @@ const mutations = {
     const selectedcolor = state.table[payload.row][payload.col].color
     if (selectedcolor === state.turn || state.clicked) {
       const selectedpiece = state.table[payload.row][payload.col].piece
+      //need to check if the king is checked
+
+      //this.commit('chess/getPieceAtPosition',payload)
+
       if (!state.clicked) {
         //choose which piece to move
+        this.commit('chess/getPieceAtPosition', {
+          row: payload.row,
+          col: payload.col,
+          color: state.turn
+        })
 
+        console.log('choose piece ', state.choosepiece)
         state.clicked = true
         state.pastlocation = payload
         switch (selectedpiece) {
@@ -517,6 +631,7 @@ const mutations = {
           state.table[payload.row][payload.col].abletocapture
         ) {
           const savedcolor = state.table[state.pastlocation.row][state.pastlocation.col].color
+          const savedchoosepiece = state.choosepiece
           //valid move
           let capturedPiece
           if (state.table[payload.row][payload.col].abletocapture) {
@@ -529,13 +644,34 @@ const mutations = {
               )
               state.blackPieces[pieceIndex].number -= 1
               this.commit('chess/countscore', 'black')
+
+              //get the piece that needed to be removed
+              this.commit('chess/getPieceAtPosition', {
+                row: payload.row,
+                col: payload.col,
+                color: 'black'
+              })
+              state.blackposition[state.choosepiece] = { row: 'x', col: 'x' }
             } else {
               const pieceIndex = state.whitePieces.findIndex(
                 (entry) => entry.piece === capturedPiece
               )
               state.whitePieces[pieceIndex].number -= 1
               this.commit('chess/countscore', 'white')
+
+              //get the piece that needed to be removed
+              this.commit('chess/getPieceAtPosition', {
+                row: payload.row,
+                col: payload.col,
+                color: 'white'
+              })
+              state.whiteposition[state.choosepiece] = { row: 'x', col: 'x' }
             }
+          } //update location in black/white position
+          if (state.turn == 'white') {
+            state.whiteposition[savedchoosepiece] = { row: payload.row, col: payload.col }
+          } else {
+            state.blackposition[savedchoosepiece] = { row: payload.row, col: payload.col }
           }
 
           state.table[payload.row][payload.col] = {
@@ -551,6 +687,7 @@ const mutations = {
             color: 'x',
             abletomove: false
           }
+          console.log(state.whiteposition, state.blackposition)
 
           this.commit('chess/resetmove')
           state.clicked = false
