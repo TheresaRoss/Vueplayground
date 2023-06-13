@@ -241,6 +241,81 @@ const mutations = {
     this.commit('chess/countscore', 'white')
     // console.log(state.whiteposition, state.blackposition)
   },
+  checkornot(state) {
+    let position
+    //check on the ending of turn, meaning check other side
+    if (state.turn == 'white') {
+      //find black king first
+      position = state.blackposition.K
+
+      for (const pieceKey in state.whiteposition) {
+        const payload = state.whiteposition[pieceKey]
+        if (payload.col != 'x') {
+          const selectedpiece = pieceKey.charAt(0)
+
+          switch (selectedpiece) {
+            case 'P':
+              this.commit('chess/moveabletilepawn', payload)
+              break
+            case 'R':
+              this.commit('chess/moveabletilerook', payload)
+              break
+            case 'B':
+              this.commit('chess/moveabletilebishop', payload)
+              break
+            case 'Q':
+              this.commit('chess/moveabletilequeen', payload)
+              break
+            case 'K':
+              this.commit('chess/moveabletileking', payload)
+              break
+            case 'N':
+              this.commit('chess/moveabletileknight', payload)
+              break
+            default:
+          }
+        }
+      }
+    } else {
+      position = state.whiteposition.K
+
+      for (const pieceKey in state.blackposition) {
+        const payload = state.blackposition[pieceKey]
+        if (payload.col != 'x') {
+          const selectedpiece = pieceKey.charAt(0)
+
+          switch (selectedpiece) {
+            case 'P':
+              this.commit('chess/moveabletilepawn', payload)
+              break
+            case 'R':
+              this.commit('chess/moveabletilerook', payload)
+              break
+            case 'B':
+              this.commit('chess/moveabletilebishop', payload)
+              break
+            case 'Q':
+              this.commit('chess/moveabletilequeen', payload)
+              break
+            case 'K':
+              this.commit('chess/moveabletileking', payload)
+              break
+            case 'N':
+              this.commit('chess/moveabletileknight', payload)
+              break
+            default:
+          }
+        }
+      }
+    }
+    if (state.table[position.row][position.col].abletocapture) {
+      state.ischecked = true
+    } else {
+      console.log(state.table[position.row][position.col])
+      state.ischecked = false
+    }
+  },
+
   countscore(state, payload) {
     if (payload == 'black') {
       let score = 0
@@ -300,8 +375,16 @@ const mutations = {
     //reset all abletomove to false
     state.table.forEach((row) => {
       row.forEach((item) => {
-        item.abletocapture = false
         item.abletomove = false
+        item.abletocapture = false
+      })
+    })
+  },
+  resetcapture(state) {
+    //reset all abletomove to false
+    state.table.forEach((row) => {
+      row.forEach((item) => {
+        item.abletocapture = false
       })
     })
   },
@@ -598,6 +681,8 @@ const mutations = {
           color: state.turn
         })
 
+        this.commit('chess/resetcapture')
+
         console.log('choose piece ', state.choosepiece)
         state.clicked = true
         state.pastlocation = payload
@@ -688,6 +773,8 @@ const mutations = {
             abletomove: false
           }
           console.log(state.whiteposition, state.blackposition)
+
+          this.commit('chess/checkornot')
 
           this.commit('chess/resetmove')
           state.clicked = false

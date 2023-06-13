@@ -1,4 +1,7 @@
 <template>
+  <div>
+    <h3>Checked? {{ ischecked }}</h3>
+  </div>
   <div class="d-flex justify-content-center">
     <table class="chess-table">
       <tbody>
@@ -42,6 +45,7 @@
     <div>
       <h3>Turn?: {{ turn }}</h3>
     </div>
+
     <div>
       <h3>
         White Score: {{ score.white }}
@@ -62,7 +66,15 @@
 import { mapState, mapMutations } from 'vuex'
 export default {
   computed: {
-    ...mapState('chess', ['table', 'turn', 'clicked', 'score', 'whitePieces', 'blackPieces'])
+    ...mapState('chess', [
+      'table',
+      'turn',
+      'clicked',
+      'score',
+      'whitePieces',
+      'blackPieces',
+      'ischecked'
+    ])
   },
   methods: {
     ...mapMutations('chess', ['initChessboard', 'moveabletile'])
