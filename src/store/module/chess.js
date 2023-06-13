@@ -241,21 +241,41 @@ const mutations = {
     this.commit('chess/countscore', 'white')
     // console.log(state.whiteposition, state.blackposition)
   },
-  checkornot(state) {
+  checkornot(state, payload) {
     let position
     //check on the ending of turn, meaning check other side
-    if (state.turn == 'white') {
+    if (payload.color == 'white') {
       //find black king first
       position = state.blackposition.K
 
       for (const pieceKey in state.whiteposition) {
         const payload = state.whiteposition[pieceKey]
+
         if (payload.col != 'x') {
+          const selectedcolor = state.table[payload.row][payload.col].color
           const selectedpiece = pieceKey.charAt(0)
 
           switch (selectedpiece) {
             case 'P':
-              this.commit('chess/moveabletilepawn', payload)
+              if (
+                (state.side == 'black' && selectedcolor == 'white') ||
+                (state.side == 'white' && selectedcolor == 'black')
+              ) {
+                if (payload.col + 1 < 8) {
+                  state.table[payload.row + 1][payload.col + 1].abletocapture = true
+                }
+                if (payload.col - 1 >= 0) {
+                  state.table[payload.row + 1][payload.col - 1].abletocapture = true
+                }
+              } else {
+                //capture logic
+                if (payload.col + 1 < 8) {
+                  state.table[payload.row - 1][payload.col + 1].abletocapture = true
+                }
+                if (payload.col - 1 >= 0) {
+                  state.table[payload.row - 1][payload.col - 1].abletocapture = true
+                }
+              }
               break
             case 'R':
               this.commit('chess/moveabletilerook', payload)
@@ -267,7 +287,32 @@ const mutations = {
               this.commit('chess/moveabletilequeen', payload)
               break
             case 'K':
-              this.commit('chess/moveabletileking', payload)
+              if (payload.checkking) {
+                //protect infinite loop
+                const directions = [
+                  { row: -1, col: -1 },
+                  { row: -1, col: 0 },
+                  { row: -1, col: 1 },
+                  { row: 0, col: -1 },
+                  { row: 0, col: 1 },
+                  { row: 1, col: -1 },
+                  { row: 1, col: 0 },
+                  { row: 1, col: 1 }
+                ]
+
+                // Iterate over the possible directions
+                for (const direction of directions) {
+                  const newRow = payload.row + direction.row
+                  const newCol = payload.col + direction.col
+
+                  // Check if the new position is within the table boundaries
+                  if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+                    state.table[newRow][newCol].abletocapture = true
+                  }
+                }
+                break
+              }
+
               break
             case 'N':
               this.commit('chess/moveabletileknight', payload)
@@ -283,10 +328,31 @@ const mutations = {
         const payload = state.blackposition[pieceKey]
         if (payload.col != 'x') {
           const selectedpiece = pieceKey.charAt(0)
+          const selectedcolor = state.table[payload.row][payload.col].color
 
           switch (selectedpiece) {
             case 'P':
-              this.commit('chess/moveabletilepawn', payload)
+              //special case
+
+              if (
+                (state.side == 'black' && selectedcolor == 'white') ||
+                (state.side == 'white' && selectedcolor == 'black')
+              ) {
+                if (payload.col + 1 < 8) {
+                  state.table[payload.row + 1][payload.col + 1].abletocapture = true
+                }
+                if (payload.col - 1 >= 0) {
+                  state.table[payload.row + 1][payload.col - 1].abletocapture = true
+                }
+              } else {
+                //capture logic
+                if (payload.col + 1 < 8) {
+                  state.table[payload.row - 1][payload.col + 1].abletocapture = true
+                }
+                if (payload.col - 1 >= 0) {
+                  state.table[payload.row - 1][payload.col - 1].abletocapture = true
+                }
+              }
               break
             case 'R':
               this.commit('chess/moveabletilerook', payload)
@@ -295,10 +361,34 @@ const mutations = {
               this.commit('chess/moveabletilebishop', payload)
               break
             case 'Q':
+              console.log('?????????')
               this.commit('chess/moveabletilequeen', payload)
               break
             case 'K':
-              this.commit('chess/moveabletileking', payload)
+              if (payload.checkking) {
+                //protect infinite loop
+                const directions = [
+                  { row: -1, col: -1 },
+                  { row: -1, col: 0 },
+                  { row: -1, col: 1 },
+                  { row: 0, col: -1 },
+                  { row: 0, col: 1 },
+                  { row: 1, col: -1 },
+                  { row: 1, col: 0 },
+                  { row: 1, col: 1 }
+                ]
+
+                // Iterate over the possible directions
+                for (const direction of directions) {
+                  const newRow = payload.row + direction.row
+                  const newCol = payload.col + direction.col
+
+                  // Check if the new position is within the table boundaries
+                  if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+                    state.table[newRow][newCol].abletocapture = true
+                  }
+                }
+              }
               break
             case 'N':
               this.commit('chess/moveabletileknight', payload)
@@ -309,11 +399,17 @@ const mutations = {
       }
     }
     if (state.table[position.row][position.col].abletocapture) {
+      console.log('FUCKING CHECK')
       state.ischecked = true
     } else {
-      console.log(state.table[position.row][position.col])
-      state.ischecked = false
+      if (state.table[position.row][position.col].abletomove && payload.checkking) {
+        state.ischecked = true
+      } else {
+        state.ischecked = false
+      }
     }
+
+    this.commit('chess/resetmove')
   },
 
   countscore(state, payload) {
@@ -457,6 +553,8 @@ const mutations = {
       { row: 1, col: 1 }
     ]
 
+    let abletocapture = []
+    let abletomove = []
     // Iterate over the possible directions
     for (const direction of directions) {
       const newRow = payload.row + direction.row
@@ -469,14 +567,61 @@ const mutations = {
 
         // Check if the target position is empty or occupied by an opponent's piece
         if (targetPiece === 'x') {
-          state.table[newRow][newCol].abletomove = true
+          //console.log(newCol, newRow)
+          //check if this move make king go in check?
+          if (state.turn == 'black') {
+            state.blackposition.K = { col: newCol, row: newRow }
+            this.commit('chess/checkornot', { color: 'white', checkking: true })
+
+            if (!state.ischecked) {
+              abletomove.push({ col: newCol, row: newRow })
+            }
+
+            state.blackposition.K = { col: payload.col, row: payload.row }
+          } else {
+            state.whiteposition.K = { col: newCol, row: newRow }
+            console.log('hi')
+            this.commit('chess/checkornot', { color: 'black', checkking: true })
+            console.log('move to ', newRow, newCol)
+            console.log(state.ischecked)
+            if (!state.ischecked) {
+              abletomove.push({ col: newCol, row: newRow })
+            }
+
+            state.whiteposition.K = { col: payload.col, row: payload.row }
+          }
         }
 
         if (targetColor != state.table[payload.row][payload.col].color && targetColor != 'x') {
           //indicate whether the first chess piece to block the movement can be capture?
-          state.table[newRow][newCol].abletocapture = true
+
+          if (state.turn == 'black') {
+            state.blackposition.K = { col: newCol, row: newRow }
+            this.commit('chess/checkornot', { color: 'white', checkking: true })
+
+            if (!state.ischecked) {
+              //if can capture without putting itself to check then can capture
+              abletocapture.push({ col: newCol, row: newRow })
+            }
+
+            state.blackposition.K = { col: payload.col, row: payload.row }
+          } else {
+            state.whiteposition.K = { col: newCol, row: newRow }
+            this.commit('chess/checkornot', { color: 'black', checkking: true })
+
+            if (!state.ischecked) {
+              abletocapture.push({ col: newCol, row: newRow })
+            }
+          }
         }
       }
+    }
+
+    for (let i = 0; i < abletocapture.length; i++) {
+      state.table[abletocapture[i].row][abletocapture[i].col].abletocapture = true
+    }
+    for (let i = 0; i < abletomove.length; i++) {
+      state.table[abletomove[i].row][abletomove[i].col].abletomove = true
     }
   },
   moveabletilequeen(state, payload) {
@@ -681,8 +826,6 @@ const mutations = {
           color: state.turn
         })
 
-        this.commit('chess/resetcapture')
-
         console.log('choose piece ', state.choosepiece)
         state.clicked = true
         state.pastlocation = payload
@@ -772,9 +915,9 @@ const mutations = {
             color: 'x',
             abletomove: false
           }
-          console.log(state.whiteposition, state.blackposition)
+          //console.log(state.whiteposition, state.blackposition)
 
-          this.commit('chess/checkornot')
+          this.commit('chess/checkornot', { color: state.turn, checkking: false })
 
           this.commit('chess/resetmove')
           state.clicked = false

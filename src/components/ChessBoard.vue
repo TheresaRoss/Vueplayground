@@ -19,7 +19,7 @@
             :class="{ highlighted: item2.abletomove, capture: item2.abletocapture }"
             @click="moveabletile({ row: index, col: index2 })"
           >
-            <p>{{ item2.abletomove + '' + index + '' + index2 }}</p>
+            <p>{{ item2.abletocapture + '' + index + '' + index2 }}</p>
             <div
               :style="{
                 visibility: item2.color == 'x' ? 'hidden' : 'visible'
